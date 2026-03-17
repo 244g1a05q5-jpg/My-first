@@ -1,0 +1,113 @@
+#include <stdio.h>
+#define MAX 20
+
+int main() {
+    int p[MAX], n, f;
+    printf("Enter number of pages: ");
+    scanf("%d", &n);
+
+    printf("Enter page reference string:\n");
+    for (int i = 0; i < n; i++)
+        scanf("%d", &p[i]);
+
+    printf("Enter number of frames: ");
+    scanf("%d", &f);
+
+    // ---------- FIFO ----------
+    int frame[MAX], faults = 0;
+    for (int i = 0; i < f; i++) frame[i] = -1;
+
+    for (int i = 0; i < n; i++) {
+        int found = 0;
+        for (int j = 0; j < f; j++)
+            if (frame[j] == p[i]) found = 1;
+
+        if (!found) {
+            frame[faults % f] = p[i];
+            faults++;
+        }
+    }
+    printf("FIFO Page Faults: %d\n", faults);
+
+    // ---------- LRU ----------
+    int time[MAX] = {0};
+    faults = 0;
+
+    for (int i = 0; i < f; i++) frame[i] = -1;
+
+    for (int i = 0; i < n; i++) {
+        int found = 0;
+        for (int j = 0; j < f; j++) {
+            if (frame[j] == p[i]) {
+                time[j] = i;
+                found = 1;
+            }
+        }
+
+        if (!found) {
+            int lru = 0;
+            for (int j = 1; j < f; j++)
+                if (time[j] < time[lru]) lru = j;
+
+            frame[lru] = p[i];
+            time[lru] = i;
+            faults++;
+        }
+    }
+    printf("LRU Page Faults: %d\n", faults);
+
+    // ---------- LFU ----------
+    int freq[MAX] = {0};
+    faults = 0;
+
+    for (int i = 0; i < f; i++) frame[i] = -1, freq[i] = 0;
+
+    for (int i = 0; i < n; i++) {
+        int found = 0;
+        for (int j = 0; j < f; j++) {
+            if (frame[j] == p[i]) {
+                freq[j]++;
+                found = 1;
+            }
+        }
+
+        if (!found) {
+            int lfu = 0;
+            for (int j = 1; j < f; j++)
+                if (freq[j] < freq[lfu]) lfu = j;
+
+            frame[lfu] = p[i];
+            freq[lfu] = 1;
+            faults++;
+        }
+    }
+    printf("LFU Page Faults: %d\n", faults);
+
+    // ---------- Optimal ----------
+    faults = 0;
+    for (int i = 0; i < f; i++) frame[i] = -1;
+
+    for (int i = 0; i < n; i++) {
+        int found = 0;
+        for (int j = 0; j < f; j++)
+            if (frame[j] == p[i]) found = 1;
+
+        if (!found) {
+            int idx = -1, far = -1;
+
+            for (int j = 0; j < f; j++) {
+                int k;
+                for (k = i + 1; k < n; k++)
+                    if (frame[j] == p[k]) break;
+
+                if (k > far) { far = k; idx = j; }
+            }
+
+            frame[idx] = p[i];
+            faults++;
+        }
+    }
+    printf("Optimal Page Faults: %d\n", faults);
+
+    return 0;
+}
